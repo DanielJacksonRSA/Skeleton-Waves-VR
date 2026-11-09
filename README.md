@@ -1,53 +1,67 @@
+<div align="center">
+
 # Skeleton Waves VR
 
-A first-person survival game for **Meta Quest** (Android, standalone VR). Skeletons come at you in endless, escalating waves. You collect gems, trade them at a wishing well for better swords, and try to last as long as you can.
+**A wave-survival game you play in virtual reality.** Put on a Meta Quest headset and skeletons run at you from every direction. Hit them with a sword. Each wave is bigger than the last, and the only question is how long you survive.
 
-<p align="center">
+![Platform](https://img.shields.io/badge/Meta_Quest-VR_headset-1e6bff)
+![Engine](https://img.shields.io/badge/Unity-6000.3-000?logo=unity&logoColor=white)
+![Language](https://img.shields.io/badge/written_in-C%23-512bd4?logo=dotnet&logoColor=white)
+![Licence](https://img.shields.io/badge/licence-All_rights_reserved-red)
+
+<p>
   <img src="docs/media/03-skeleton-wave.jpg" width="32%" alt="A pack of skeletons closing in">
   <img src="docs/media/02-wishing-well.jpg" width="32%" alt="The wishing well">
   <img src="docs/media/01-gems.jpg" width="32%" alt="Dropped gems glowing on the ground">
 </p>
 
-**Demo video (with sound):** [`docs/media/demo.mp4`](docs/media/demo.mp4). A full 5-minute run on device: waves 1 to 5, the well, a sword upgrade and the death screen. The small inset at the bottom left is the headset's stereo view.
+**[Watch a 5-minute run](docs/media/demo.mp4)** (with sound) — the first five waves, a trip to the wishing well and a sword upgrade.
 
-| | |
-|---|---|
-| Engine | Unity 6000.3.8f1, URP 17.3 |
-| Target | Meta Quest (Android, IL2CPP, min SDK 29) with the Oculus and OpenXR loaders |
-| Language | C# (about 3,700 lines in `Assets/Scripts`) |
-| Input | Unity Input System: gamepad, keyboard and mouse, plus headset look |
-| Editor testing | Works with keyboard and mouse in the editor, no headset needed |
+</div>
 
-## Gameplay loop
+## What you do
 
-1. **Survive the wave.** A wave spawns around you. Clear every skeleton to start the next.
-2. **Loot.** Skeletons sometimes drop gems that despawn after 30 seconds. A barrel somewhere on the map refills with 1 to 3 gems at a random time between 15 seconds and 4 minutes after you last looted it, and glows and plays a looping sound when it is ready.
-3. **Wish.** Throw gems into the wishing well, then make a wish. More gems means better odds of a stronger sword.
-4. **Fight.** Swords have durability and break. Pick up the new one, drop the old one.
-5. **Heal.** Stand in the healing tower's radius to recover 8 health every 2 seconds.
-6. **Die.** Your survival time and wave count are shown and you can play again.
+You stand in a forest clearing and fight skeletons with a sword. Skeletons sometimes drop glowing gems when they die. You can carry those gems to a magic wishing well and trade them for a better sword. Then the next wave comes, and it's harder. When a skeleton finally gets you, the game tells you how long you lasted.
+
+That's the whole game. The interesting part is that nothing is scripted wave by wave — the difficulty is worked out by a formula, so it can keep getting harder forever without anyone designing each wave by hand.
+
+## The systems, in plain English
+
+- **Waves.** Each new wave has more skeletons that run faster and hit harder than the one before. The game computes this from a small formula rather than a hand-written list, so there is no "final wave."
+- **The skeletons actually look for you.** A skeleton doesn't automatically know where you are. It has to see you. If you hide behind a tree, it loses you and wanders back to where it last saw you.
+- **Some waves hunt as a pack.** On certain waves, if one skeleton spots you, all of them come. On other waves they each act alone, so you can't rely on a single trick.
+- **The well is a gamble.** The more gems you throw in, the better your chance of a top-tier sword — but it's never guaranteed. A few gems might get lucky; a lot of gems shifts the odds in your favour.
+- **Swords break.** Every hit wears your sword down. When it shatters you're unarmed until you grab a new one, so a good sword is precious.
 
 ## Controls
 
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|
 | Move | `W` `A` `S` `D` | Left stick |
-| Look | Mouse | Headset (right stick turns the body) |
-| Sprint | `Shift` | Left stick click |
-| Jump | `Space` | `A` / South |
+| Look | Mouse | Turn your head |
+| Sprint | `Shift` | Click left stick |
+| Jump | `Space` | `A` |
 | Attack | Left click | Right trigger |
-| Pick up or drop sword | `E` | `Y` / North |
-| Loot barrel | `E` | `X` / West |
-| Make a wish at the well | `E` | `X` or `Y` |
-| Throw a gem | `Q` | `B` / East |
+| Pick up / drop sword | `E` | `Y` |
+| Loot barrel / use well | `E` | `X` |
+| Throw a gem | `Q` | `B` |
 
-## How it works
+> **Note:** the game reads your head movement from the headset, but you move with a gamepad (or keyboard in the editor). It doesn't use the Quest hand controllers yet.
+
+## Running it
+
+You need Unity **6000.3.8f1** (free). Open this folder in Unity Hub, open `Assets/Scenes/SampleScene.unity`, and press Play to try it on your computer with a keyboard and mouse. To play it on an actual Quest, build for Android and sideload it, or build and run straight to the headset with developer mode on.
+
+---
+
+<details>
+<summary><b>Technical detail</b> — how the systems are implemented, for a developer reader</summary>
 
 ### Wave scaling (`InfiniteWaveController.cs`)
 
-Each wave is computed from a formula, so the game has no hand-authored wave table and can scale forever. With the values used in the scene:
+Each wave is computed from a formula, so the game has no hand-authored wave table and can scale forever:
 
-| Wave | Skeletons | Skeleton speed | Hit damage | Gem drop chance | Hive mind |
+| Wave | Skeletons | Speed | Damage | Gem drop | Hive mind |
 |---|---|---|---|---|---|
 | 1 | 1 | 2.8 | 8 | 70% | no |
 | 2 | 3 | 3.2 | 10 | 66% | no |
@@ -57,24 +71,23 @@ Each wave is computed from a formula, so the game has no hand-authored wave tabl
 | 6 | 25 | 4.8 | 18 | 50% | no |
 | 7 | 34 | 5.2 | 20 | 46% | yes |
 
-- **Count:** `start + (wave - 1)^1.65 * 1.7`, rounded. Growth is faster than linear but slower than quadratic.
-- **Speed:** +0.4 per wave, capped at 90% of the player's sprint speed, so enemies never become impossible to outrun.
+- **Count:** `start + (wave - 1)^1.65 * 1.7`, rounded. Faster than linear, slower than quadratic.
+- **Speed:** +0.4 per wave, capped at 90% of the player's sprint so enemies stay beatable.
 - **Damage:** +2 per wave, capped at 40.
-- **Gem drops:** fall 4% per wave to a floor of 30%, so rewards shrink while danger grows.
-- **Hive mind:** on from wave 3 except every third wave. Waves alternate between coordinated and uncoordinated enemies, so the player cannot settle into one tactic.
+- **Gem drops:** fall 4% per wave to a floor of 30%.
+- **Hive mind:** on from wave 3 except every third wave.
 
 ### Skeleton AI (`EnemyAI.cs`)
 
-- **Perception:** an overlap sphere (range 20) finds the player, then a raycast checks line of sight. A skeleton behind a tree does not see you.
-- **Search:** when it loses sight it walks to the last known position, slowing down on arrival, then goes back to roaming.
-- **Roaming:** random heading changes with pauses, so idle skeletons do not move in lock step.
-- **Hive mind:** a static shared target and a counter of how many members currently see the player. If one skeleton sees you, every hive-mind skeleton chases you. The target is cleared only when the last sighting is lost, so the counter stays correct as enemies die or lose sight.
-- **Attack:** damage plus knockback. `PlayerMovement` applies the knockback impulse and briefly locks input so a hit actually pushes you.
-- **Feedback:** an "angry" blendshape on the face is driven from `LateUpdate`, so animation clips cannot overwrite it.
+- **Perception:** an overlap sphere (range 20) finds the player, then a raycast checks line of sight.
+- **Search:** on losing sight it walks to the last known position, slows on arrival, then roams.
+- **Hive mind:** a static shared target and a counter of members that currently see the player. If one sees you, every hive-mind skeleton chases you. The counter stays correct as enemies die or lose sight.
+- **Attack:** damage plus knockback, applied as an impulse in `PlayerMovement`.
+- **Feedback:** an "angry" blendshape driven from `LateUpdate` so animation clips can't overwrite it.
 
 ### Wishing well (`WishingWell.cs`)
 
-The odds of each sword tier depend on how many gems were thrown in. The chance of the middle tier rises linearly from 19% at 3 gems to 55% at 20 gems. The chance of the top tier rises with the cube of the progress, from 1% to 30%, so it stays rare until the player commits many gems. Weights are normalised and rolled once. The well light brightens with each gem, and the sword is launched out of the well with a safe-spawn check so it never lands inside geometry.
+Sword odds scale with gems thrown in. The middle tier rises linearly from 19% (3 gems) to 55% (20 gems). The top tier rises with the cube of progress, from 1% to 30%. Weights are normalised and rolled once, and the sword is launched with a safe-spawn check.
 
 ### Weapons (`Sword.cs`, `WeaponManager.cs`)
 
@@ -84,47 +97,40 @@ The odds of each sword tier depend on how many gems were thrown in. The chance o
 | Stone | 20 | 2 |
 | Diamond | 50 | 1 |
 
-Each sword has 100 durability. A skeleton has 100 health. Swings are a short stab animation, and each enemy can only be hit once per swing. When a sword breaks the weapon manager is notified, the sword is destroyed and the player is left empty-handed.
+Each sword has 100 durability and a skeleton has 100 health. Each enemy is hit once per swing. A broken sword notifies the weapon manager and leaves the player empty-handed.
 
 ### Player and HUD (`PlayerHealth.cs`, `PlayerMovement.cs`)
 
-- Health bar, weapon durability bar, wave and gem counters, and an arrow that points to the nearest skeleton relative to where you are looking. The arrow uses the headset's heading in VR.
-- A low-health pulse, a death sound, and a death panel with survival time and waves survived.
-- Movement uses a rigidbody with velocity, a ground check, sprint, jump and decaying knockback. In VR, look direction comes from the headset and the right stick turns the body.
+Health and durability bars, wave and gem counters, and an arrow that points to the nearest skeleton using the headset's heading. Movement is a rigidbody with velocity, ground check, sprint, jump and decaying knockback.
 
-## Running it
+</details>
 
-1. Install Unity **6000.3.8f1** with the Android build module.
-2. Clone the repo and open the folder in Unity Hub. The first import takes a while. The repo includes the baked lighting for the scene, so the clone is about 330 MB.
-3. Open `Assets/Scenes/SampleScene.unity` and press Play to try it in the editor with keyboard and mouse.
+<details>
+<summary><b>Third-party assets</b></summary>
 
-To run it on a Quest:
+Included so the project opens and runs as built. Each belongs to its owner.
 
-1. In *File > Build Profiles*, switch to **Android**.
-2. In *Project Settings > XR Plug-in Management*, enable the Oculus or OpenXR loader for Android.
-3. Enable developer mode on the headset, build and run, or sideload the APK with `adb install`.
-4. Pair a Bluetooth gamepad with the headset to move.
+- **Low Poly Stylized Nature** by Cody Dreams — trees, props, camp, barrel, structures.
+- **Stylized Gem Pack** by PolyKebap — gems.
+- **Lowpoly Forest Pack** by Onerat Games.
+- **Mini Simple Characters Skeleton Demo** — the skeleton and animations.
+- **Google Cardboard XR** and **XR Interaction Toolkit** samples, TextMesh Pro.
+- **Audio** — music, sword, healing and UI sounds plus game sound effects, used for demonstration.
 
-## Third-party assets
+</details>
 
-These are included so the project opens and runs as built. Each remains under its own licence and belongs to its owner.
+<details>
+<summary><b>Known limitations</b></summary>
 
-- **Low Poly Stylized Nature** by Cody Dreams (`Assets/Cody Dreams`): trees, props, camp, barrel and structures.
-- **Stylized Gem Pack** by PolyKebap (`Assets/PolyKebap`): gems.
-- **Lowpoly Forest Pack** by Onerat Games (`Assets/Lowpoly Forest Pack`).
-- **Mini Simple Characters Skeleton Demo** (`Assets/Mini Simple Characters Skeleton Demo`): the skeleton character and animations.
-- **Google Cardboard XR Plugin** samples and **XR Interaction Toolkit** samples (`Assets/Samples`), TextMesh Pro.
-- **Audio** (`Assets/Audio`): music, sword swishes, healing and UI sounds, plus meme and game sound effects used for fun. These belong to their respective creators and are included for demonstration only.
-
-## Known limitations
-
-- **No tracked-controller input.** Looking uses the headset and movement needs a gamepad. Hand tracking and Quest controller interaction are not implemented.
-- **Simple pathing.** Skeletons steer directly towards their target with a rigidbody and do not path around obstacles. A NavMesh is baked into the scene but the skeleton movement does not use it.
-- **Name-based UI lookup.** The HUD finds its elements by object name at startup. Renaming a UI object in the scene breaks the link.
+- **No tracked-controller input.** Looking uses the headset and movement needs a gamepad.
+- **Simple pathing.** Skeletons steer directly with a rigidbody and don't path around obstacles.
+- **Name-based UI lookup.** The HUD finds elements by object name at startup; renaming breaks the link.
 - **No automated tests.** Balance was tuned by playing.
 
-## Author
+</details>
 
-Daniel Jackson. [GitHub](https://github.com/DanielJacksonRSA)
+---
 
-Code in `Assets/Scripts` is licensed under the [All rights reserved](LICENSE). Third-party assets keep their own licences, as listed above.
+<div align="center">
+<sub>Daniel Jackson · <a href="https://github.com/DanielJacksonRSA">GitHub</a> · code in <code>Assets/Scripts</code>: <a href="LICENSE">All rights reserved</a></sub>
+</div>
