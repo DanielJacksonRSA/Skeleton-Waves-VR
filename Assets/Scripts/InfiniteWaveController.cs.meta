@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ed834e22c8a644628b97a73a33dd3d34
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - skeletonPrefab: {fileID: 704941788832537845, guid: 4a46e821c58b5cd42b14eaab6d197266, type: 3}
+  - playerHealth: {instanceID: 0}
+  - playerMovement: {instanceID: 0}
+  - waveStartClip: {instanceID: 0}
+  - waveAudioSource: {instanceID: 0}
+  - nowWaveLabel: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
